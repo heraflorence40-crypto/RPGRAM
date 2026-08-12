@@ -1,0 +1,40 @@
+name: Build Lex City RP Launcher
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'launcher/**'
+      - '.github/workflows/lex-city-launcher.yml'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore
+        run: dotnet restore launcher/LexCityLauncher.csproj
+      - name: Publish Windows x64
+        run: dotnet publish launcher/LexCityLauncher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/lex-city
+      - name: Rename executable
+        shell: pwsh
+        run: Rename-Item 'publish/lex-city/Lex City RP Launcher.exe' 'Lex City RP Launcher.exe'
+      - name: Create distribution ZIP
+        shell: pwsh
+        run: Compress-Archive -Path 'publish/lex-city/*' -DestinationPath 'Lex-City-RP-Launcher.zip' -Force
+      - name: Upload launcher EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lex-City-RP-Launcher
+          path: 'publish/lex-city/Lex City RP Launcher.exe'
+          if-no-files-found: error
+      - name: Upload distribution ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lex-City-RP-Launcher-package
+          path: 'Lex-City-RP-Launcher.zip'
+          if-no-files-found: error
